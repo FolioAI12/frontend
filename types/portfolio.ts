@@ -40,8 +40,12 @@ export type TemplateStyle = 'minimal' | 'corporate' | 'creative' | 'technical' |
 export type OutputFormat = 'html' | 'pdf' | 'pptx';
 export type FontStyle = 'modern' | 'classic' | 'mono' | 'humanist';
 export type LayoutStyle = 'single' | 'two-column';
+export type BuildMode = 'full' | 'social-only';
 
 export interface PortfolioData {
+  // Build mode
+  buildMode: BuildMode;
+
   // Personal
   fullName: string;
   jobTitle: string;
@@ -87,6 +91,7 @@ export interface PortfolioData {
 }
 
 export const defaultPortfolioData: PortfolioData = {
+  buildMode: 'full',
   fullName: '',
   jobTitle: '',
   bio: '',
@@ -122,6 +127,8 @@ export const defaultPortfolioData: PortfolioData = {
 };
 
 export type FormStep =
+  | 'mode-select'
+  | 'social-input'
   | 'personal'
   | 'skills'
   | 'experience'

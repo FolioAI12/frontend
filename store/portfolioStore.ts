@@ -19,16 +19,22 @@ interface PortfolioStore {
   resetAll: () => void;
 }
 
-const steps: FormStep[] = [
-  'personal', 'skills', 'experience', 'education',
+// Full mode steps
+export const FULL_STEPS: FormStep[] = [
+  'mode-select', 'personal', 'skills', 'experience', 'education',
   'projects', 'certifications', 'social', 'template', 'generate'
+];
+
+// Social-only mode steps
+export const SOCIAL_STEPS: FormStep[] = [
+  'mode-select', 'social-input', 'generate'
 ];
 
 export const usePortfolioStore = create<PortfolioStore>()(
   persist(
     (set) => ({
       data: defaultPortfolioData,
-      currentStep: 'personal',
+      currentStep: 'mode-select',
       generatedHTML: '',
       isGenerating: false,
       error: null,
@@ -46,7 +52,7 @@ export const usePortfolioStore = create<PortfolioStore>()(
 
       resetAll: () => set({
         data: defaultPortfolioData,
-        currentStep: 'personal',
+        currentStep: 'mode-select',
         generatedHTML: '',
         isGenerating: false,
         error: null,
@@ -58,28 +64,35 @@ export const usePortfolioStore = create<PortfolioStore>()(
   )
 );
 
-export const STEPS: FormStep[] = steps;
-
 export const STEP_LABELS: Record<FormStep, string> = {
-  personal: 'Personal Info',
-  skills: 'Skills',
-  experience: 'Experience',
-  education: 'Education',
-  projects: 'Projects',
-  certifications: 'Certifications',
-  social: 'Social Links',
-  template: 'Design',
-  generate: 'Generate',
+  'mode-select':   'Choose Mode',
+  'social-input':  'Social Links',
+  personal:        'Personal Info',
+  skills:          'Skills',
+  experience:      'Experience',
+  education:       'Education',
+  projects:        'Projects',
+  certifications:  'Certifications',
+  social:          'Social Links',
+  template:        'Design',
+  generate:        'Generate',
 };
 
 export const STEP_ICONS: Record<FormStep, string> = {
-  personal: '👤',
-  skills: '⚡',
-  experience: '💼',
-  education: '🎓',
-  projects: '🚀',
-  certifications: '🏆',
-  social: '🔗',
-  template: '🎨',
-  generate: '✨',
+  'mode-select':   '🚀',
+  'social-input':  '🌐',
+  personal:        '👤',
+  skills:          '⚡',
+  experience:      '💼',
+  education:       '🎓',
+  projects:        '🚀',
+  certifications:  '🏆',
+  social:          '🔗',
+  template:        '🎨',
+  generate:        '✨',
 };
+
+// Get the right step list based on build mode
+export function getSteps(buildMode: string): FormStep[] {
+  return buildMode === 'social-only' ? SOCIAL_STEPS : FULL_STEPS;
+}

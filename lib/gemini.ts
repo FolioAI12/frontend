@@ -1,9 +1,120 @@
 import { PortfolioData } from '@/types/portfolio';
 
 /* ─────────────────────────────────────────────────────────────────────────────
+   UNIQUENESS ENGINE
+   Each generation gets a random "creative fingerprint" that forces the AI to
+   produce genuinely different layouts, motifs, and compositions even for the
+   same template and user data.
+───────────────────────────────────────────────────────────────────────────── */
+
+const HERO_LAYOUTS = [
+  'Full-viewport centered, name massive and centered, bio below, social icons in a row underneath',
+  'Left-aligned asymmetric: name top-left in oversized type, bio right side, profile photo top-right',
+  'Split-screen: left half solid accent color with name in white, right half white with bio and socials',
+  'Bottom-anchored: name and role pinned to viewport bottom, subtle background texture fills the rest',
+  'Overlapping layers: large faded name behind a photo/avatar, readable name smaller in front',
+  'Kinetic layout: first name on line 1, last name indented on line 2, role as a thin label between them',
+  'Minimal one-liner: 100vh with only name centered in huge type, everything else appears on scroll',
+  'Magazine cover: name in a bold color band across the middle, above and below it: role and bio',
+];
+
+const SECTION_MOTIFS = [
+  'Use large decorative section numbers (01, 02, 03) in the background, very faded',
+  'Use a thin vertical line as a section accent, with section titles rotated 90° alongside it',
+  'Section headers look like sticky notes or post-its with slight rotation',
+  'Each section has a unique two-letter monogram badge in the corner',
+  'Use horizontal rule dividers styled as double lines with a diamond in the center',
+  'Section headers have a highlight marker effect — background color swatch behind the text',
+  'Sections separated by full-width thin gradient bars that shift from accent to transparent',
+  'Use Roman numerals (I, II, III) as section markers in serif italic',
+];
+
+const SKILL_DISPLAYS = [
+  'Skills as circular orbit diagram: skill name around a central circle using CSS absolute positioning',
+  'Skills as a horizontal bento grid: varied sizes, some spanning 2 columns',
+  'Skills as a two-column table: skill name left, proficiency dots right',
+  'Skills as large outlined pill badges with colored left-border accent per category',
+  'Skills grouped by category with a subtle colored row background per group',
+  'Skills as an animated tag cloud: CSS multi-line centered flex with slight size variation',
+  'Skills as code-style array syntax: const skills = ["React", "TypeScript", ...] in a code block',
+  'Skills as a progress-bar list: skill name + animated fill bar per item',
+];
+
+const COLOR_TREATMENTS = [
+  'Use the accent color as full-bleed section backgrounds for alternating sections',
+  'Accent color only on text — headlines, links, icons. Rest is monochrome.',
+  'Accent color as a single bold diagonal stripe across the hero section',
+  'Light tint of accent (10% opacity) as the page background, pure white for cards',
+  'Accent as gradient from itself to a complementary color on all interactive elements',
+  'Dark/inverted sections (every other section uses a dark background with light text)',
+  'Accent as a thick left-border on all cards — the only color in an otherwise grayscale layout',
+  'Accent used exclusively as glow/shadow color on hover states',
+];
+
+const TYPOGRAPHY_TREATMENTS = [
+  'Extremely large decorative ampersand (&) or em dash as a background watermark on the bio section',
+  'First letter of bio is a drop cap: oversized, accent-colored, floated left',
+  'Job title in all-lowercase with very wide letter-spacing (0.3em)',
+  'Name displayed in two weights: first name light (300), last name heavy (900)',
+  'Mix serif for headings and monospace for all small labels/captions',
+  'All section labels in small-caps with letter-spacing 0.15em',
+  'Bio text in italic serif, noticeably larger than body text (1.2× scale)',
+  'Name rotated -90° and positioned vertically along the left viewport edge',
+];
+
+const FOOTER_STYLES = [
+  'Giant CTA phrase in oversized type: "Let\'s build something." with email below',
+  'Dark full-bleed footer with social icon grid, name, and thin copyright line',
+  'Minimal one-line footer: name · email · © year — centered, small text',
+  'Footer styled as a terminal: $ contact [name] with blinking cursor',
+  'Footer with a large decorative wave SVG top edge, then solid dark background',
+  'Footer as a business card: white card on dark background, centered details',
+  'Colorful footer band: solid accent background with white text and icons',
+  'Footer split into 3 columns: About blurb | Quick links | Social icons',
+];
+
+function pickRandom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function buildUniquenessFingerprint(): string {
+  const seed = Math.floor(Math.random() * 9000) + 1000;
+  return `
+═══════════════════════════════════════════
+UNIQUENESS FINGERPRINT (seed: ${seed})
+These creative decisions are MANDATORY for this specific generation.
+They ensure this portfolio looks different from every other generation.
+═══════════════════════════════════════════
+
+HERO LAYOUT DIRECTIVE:
+${pickRandom(HERO_LAYOUTS)}
+
+SECTION MOTIF DIRECTIVE:
+${pickRandom(SECTION_MOTIFS)}
+
+SKILLS DISPLAY DIRECTIVE:
+${pickRandom(SKILL_DISPLAYS)}
+
+COLOR TREATMENT DIRECTIVE:
+${pickRandom(COLOR_TREATMENTS)}
+
+TYPOGRAPHY TREATMENT DIRECTIVE:
+${pickRandom(TYPOGRAPHY_TREATMENTS)}
+
+FOOTER STYLE DIRECTIVE:
+${pickRandom(FOOTER_STYLES)}
+
+ADDITIONAL UNIQUENESS RULES:
+- Do NOT generate a generic top-to-bottom stacked layout. Push the CSS Grid and positioning creatively.
+- The hero must feel noticeably different from a standard "name + title + bio" centered block.
+- At least one section must use an unexpected visual device (e.g. a large decorative graphic element, a rotated label, a diagonal cut, an oversized number, a grid with unequal columns).
+- Vary the card border-radius: some cards fully rounded (24px+), some sharp (0px), don't use the same radius everywhere.
+- Use at least 2 different background colors/textures across sections (not the same white everywhere).
+`;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
    PER-TEMPLATE FULL DESIGN SYSTEM
-   Each template gets its own complete CSS personality, layout rules, section
-   styling, and visual identity instructions.
 ───────────────────────────────────────────────────────────────────────────── */
 const TEMPLATE_SYSTEMS: Record<string, string> = {
 
@@ -419,7 +530,117 @@ const FONT_STACKS: Record<string, { heading: string; body: string }> = {
 };
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   MAIN PROMPT BUILDER
+   SOCIAL-ONLY PROMPT BUILDER
+   When user only provides social links, we build a prompt that instructs
+   the AI to infer everything it can from those platforms and create a
+   complete portfolio based on that public presence.
+───────────────────────────────────────────────────────────────────────────── */
+export function buildSocialOnlyPrompt(data: PortfolioData): string {
+  const templateSystem = TEMPLATE_SYSTEMS[data.template]
+    .replace(/\{\{PRIMARY_COLOR\}\}/g, data.primaryColor);
+  const fonts = FONT_STACKS[data.fontStyle] || FONT_STACKS.modern;
+  const uniqueness = buildUniquenessFingerprint();
+
+  const socials = Object.fromEntries(
+    Object.entries({
+      linkedin: data.linkedin,
+      github:   data.github,
+      twitter:  data.twitter,
+      instagram: data.instagram,
+      youtube:  data.youtube,
+      website:  data.website,
+    }).filter(([, v]) => v && v.trim())
+  );
+
+  const socialList = Object.entries(socials)
+    .map(([k, v]) => `  ${k}: ${v}`)
+    .join('\n');
+
+  return `You are a world-class frontend developer and UI/UX designer specializing in personal branding. Your task is to generate a breathtaking, production-quality, single-file HTML portfolio website using ONLY the social media profiles provided below.
+
+═══════════════════════════════════════════
+SOCIAL PROFILES PROVIDED
+═══════════════════════════════════════════
+${socialList}
+
+═══════════════════════════════════════════
+YOUR TASK: INFER & BUILD
+═══════════════════════════════════════════
+From the social profile URLs above, you must:
+
+1. INFER the person's identity from the usernames/handles. For example:
+   - linkedin.com/in/john-doe-designer → name "John Doe", likely a designer
+   - github.com/johndoe → a developer, infer tech stack from username patterns
+   - youtube.com/@JohnDoeCooks → a content creator in the cooking niche
+   - instagram.com/johndoe.art → an artist or visual creative
+
+2. BUILD a complete, professional, impressive portfolio for this person based on:
+   - Their inferred name and professional identity
+   - Their field/industry (inferred from the platforms they use and username patterns)
+   - A compelling bio written from what you can infer
+   - Appropriate skills for their inferred field
+   - A fictional-but-plausible career story consistent with their online presence
+
+3. PRIORITIZE the social links heavily — they are the source of truth:
+   - Display ALL provided social links prominently throughout the page (hero, footer, sidebar)
+   - Each social link should be represented with its proper branded SVG icon
+   - LinkedIn links: use official LinkedIn blue (#0077B5) for the icon
+   - GitHub links: use GitHub's dark color for the icon
+   - Twitter/X: use X's black logo
+   - Instagram: use the gradient icon colors
+   - YouTube: use YouTube red (#FF0000)
+   - Each social link must open in a new tab (target="_blank")
+   - Create a dedicated "Find Me Online" section that showcases all platforms beautifully
+
+4. CONTENT TO GENERATE (make it professional and realistic, not generic):
+   - Full name (from handle/username)
+   - Job title (from inferred field)
+   - 3–4 sentence compelling bio
+   - 8–12 relevant skills for their field
+   - 2–3 plausible work experiences in their field
+   - 1–2 notable projects (relevant to their inferred work)
+   - Education (generic but appropriate: BSc/BA from a university, inferred from field)
+   - The social links as the centerpiece of the portfolio
+
+═══════════════════════════════════════════
+DESIGN SYSTEM FOR THIS PORTFOLIO
+═══════════════════════════════════════════
+${templateSystem}
+
+═══════════════════════════════════════════
+CUSTOMIZATION
+═══════════════════════════════════════════
+Primary Accent Color: ${data.primaryColor}
+Heading Font Stack: ${fonts.heading}
+Body Font Stack: ${fonts.body}
+
+${uniqueness}
+
+═══════════════════════════════════════════
+MANDATORY QUALITY REQUIREMENTS
+═══════════════════════════════════════════
+
+1. SELF-CONTAINED — Complete single HTML file. No CDN. No external fonts. All CSS in <style>. All JS in <script>.
+2. RESPONSIVE — Works on mobile (360px), tablet (768px), desktop (1440px).
+3. SOCIAL PROMINENCE — Social links must appear in: hero section, a dedicated section, and footer. Every platform must have its real SVG icon (inline SVG, no emoji).
+4. HERO — Visually dramatic, full-viewport. Name and role front-and-center. Social icons in the hero.
+5. NAVIGATION — Sticky top nav with smooth scroll. Active section highlighting.
+6. ANIMATIONS — Implement all animations from template spec. Smooth, premium feel.
+7. SEO — Include meta description, og:title, og:description, viewport meta.
+8. FOOTER — Full contact footer with all social links and a CTA.
+
+═══════════════════════════════════════════
+OUTPUT RULES
+═══════════════════════════════════════════
+- Output ONLY the complete HTML document.
+- Start with exactly: <!DOCTYPE html>
+- End with exactly: </html>
+- NO markdown, NO backticks, NO commentary.
+- Minimum 800 lines. Every CSS rule purposeful and polished.`;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MAIN PROMPT BUILDER (Full mode)
 ───────────────────────────────────────────────────────────────────────────── */
 export function buildGeminiPrompt(data: PortfolioData): string {
   const templateSystem = TEMPLATE_SYSTEMS[data.template]
@@ -446,6 +667,8 @@ export function buildGeminiPrompt(data: PortfolioData): string {
     }).filter(([, v]) => v && v.trim())
   );
 
+  const hasSocials = Object.keys(cleanSocial).length > 0;
+
   const portfolioData = {
     name: data.fullName,
     title: data.jobTitle,
@@ -453,15 +676,18 @@ export function buildGeminiPrompt(data: PortfolioData): string {
     email: data.email || null,
     phone: data.phone || null,
     location: data.location || null,
-    hasProfilePhoto: !!data.profilePhoto, // base64 injected post-generation, not in prompt
+    hasProfilePhoto: !!data.profilePhoto,
     skills: data.skills.length ? data.skills : null,
     languages: data.languages.length ? data.languages : null,
     experience: data.workExperience.length ? data.workExperience : null,
     education: data.education.length ? data.education : null,
     projects: data.projects.length ? data.projects : null,
     certifications: data.certifications.length ? data.certifications : null,
-    social: Object.keys(cleanSocial).length ? cleanSocial : null,
+    social: hasSocials ? cleanSocial : null,
   };
+
+  // Build uniqueness fingerprint (random each call)
+  const uniqueness = buildUniquenessFingerprint();
 
   return `You are a world-class frontend developer and UI/UX designer. Your task is to generate a breathtaking, production-quality, single-file HTML portfolio website. This must look like it was built by a professional agency, not a template generator.
 
@@ -479,6 +705,8 @@ Body Font Stack: ${fonts.body}
 Layout: ${layoutDesc}
 Sections to include: ${visibleSections.join(', ')}
 
+${uniqueness}
+
 ═══════════════════════════════════════════
 PERSON'S DATA
 ═══════════════════════════════════════════
@@ -488,6 +716,19 @@ ${data.profilePhoto
   ? `PROFILE PHOTO: The user uploaded a photo. In your HTML, use exactly this string as the img src value — it will be swapped in after generation: __PROFILE_PHOTO_PLACEHOLDER__`
   : `PROFILE PHOTO: No photo provided. Create a CSS-only avatar circle showing the person's initials in the accent color.`
 }
+
+${hasSocials ? `
+═══════════════════════════════════════════
+SOCIAL LINKS — HIGH PRIORITY
+═══════════════════════════════════════════
+The person has provided social profiles. These are HIGH PRIORITY and must be:
+1. Shown prominently in the hero section with real inline SVG icons
+2. Shown in the footer with full icon treatment
+3. Each must use the platform's real brand color on hover
+4. LinkedIn: #0077B5, GitHub: #333, Twitter/X: #000, Instagram: gradient, YouTube: #FF0000
+5. All must open in target="_blank" rel="noopener noreferrer"
+6. Include a dedicated "Connect" or "Find Me Online" section if 3+ socials are provided
+` : ''}
 
 ═══════════════════════════════════════════
 MANDATORY QUALITY REQUIREMENTS
@@ -515,7 +756,7 @@ MANDATORY QUALITY REQUIREMENTS
 
 11. FOOTER — Full footer with name, email (if provided), social links, and a "Get in Touch" CTA.
 
-12. ANIMATIONS — Implement ALL animations described in the template spec above using CSS @keyframes and/or minimal vanilla JS (IntersectionObserver for scroll-reveal). No jQuery, no external libraries.
+12. ANIMATIONS — Implement ALL animations described in the template spec above AND the uniqueness fingerprint above using CSS @keyframes and/or minimal vanilla JS (IntersectionObserver for scroll-reveal). No jQuery, no external libraries.
 
 13. SEO — Include: <meta name="description">, <meta property="og:title">, <meta property="og:description">, <meta name="viewport" content="width=device-width, initial-scale=1">, <title>${data.fullName} — ${data.jobTitle}</title>.
 
@@ -549,12 +790,14 @@ OUTPUT RULES
    API CALLER
 ───────────────────────────────────────────────────────────────────────────── */
 export async function generatePortfolioHTML(data: PortfolioData): Promise<string> {
-  const prompt = buildGeminiPrompt(data);
+  // Choose the right prompt based on build mode
+  const prompt = data.buildMode === 'social-only'
+    ? buildSocialOnlyPrompt(data)
+    : buildGeminiPrompt(data);
 
   const response = await fetch('/api/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    // profilePhoto sent separately so base64 never bloats the prompt
     body: JSON.stringify({ prompt, profilePhoto: data.profilePhoto || null }),
   });
 
