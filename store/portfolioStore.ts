@@ -92,6 +92,9 @@ export const STEP_ICONS: Record<FormStep, string> = {
   generate:        '✨',
 };
 
+// Backward-compat alias — StepSidebar still imports STEPS
+export const STEPS: FormStep[] = FULL_STEPS;
+
 // Get the right step list based on build mode
 export function getSteps(buildMode: string): FormStep[] {
   return buildMode === 'social-only' ? SOCIAL_STEPS : FULL_STEPS;
