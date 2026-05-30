@@ -181,7 +181,7 @@ export default function HomePage() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <Image src="/logo.svg" alt="FolioAI" width={30} height={30} style={{ borderRadius: 8 }} />
+          <Image src="/logo.png" alt="FolioAI" width={30} height={30} style={{ borderRadius: 8 }} />
           <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 17, color: 'var(--primary)' }}>FolioAI</span>
         </div>
         <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
@@ -443,7 +443,7 @@ export default function HomePage() {
       {/* ── FOOTER ── */}
       <footer style={{ padding: '32px 24px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Image src="/logo.svg" alt="FolioAI" width={22} height={22} style={{ borderRadius: 6 }} />
+          <Image src="/logo.png" alt="FolioAI" width={22} height={22} style={{ borderRadius: 6 }} />
           <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 14, color: 'var(--primary)' }}>FolioAI</span>
         </div>
         <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Built with Next.js · Powered by Google Gemini</p>

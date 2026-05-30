@@ -29,7 +29,7 @@ function HistoryNav({ userEmail, photoURL }: { userEmail?: string | null; photoU
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none' }}>
-          <Image src="/logo.svg" alt="FolioAI" width={28} height={28} style={{ borderRadius: 8 }} />
+          <Image src="/logo.png" alt="FolioAI" width={28} height={28} style={{ borderRadius: 8 }} />
           <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 16, color: 'var(--primary)' }}>FolioAI</span>
         </Link>
         <span style={{ color: 'var(--border)', fontSize: 18 }}>·</span>
