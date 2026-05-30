@@ -69,16 +69,21 @@ export default function GenerateStep({ onBack }: { onBack: () => void }) {
     if (!user || !generatedHTML) return;
     setSaving(true);
     try {
-      await savePortfolio(
+      const { error: saveError } = await savePortfolio(
         user.uid,
         user.email || '',
         data.fullName || 'Untitled Portfolio',
         data.template,
+        data.primaryColor,
         generatedHTML,
         data as unknown as object
       );
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      if (saveError) {
+        alert('Save failed: ' + saveError);
+      } else {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      }
     } finally {
       setSaving(false);
     }

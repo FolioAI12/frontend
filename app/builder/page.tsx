@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -72,7 +73,7 @@ function BuilderContent() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #00C9A7, #6C63FF)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 12 }}>F</div>
+            <Image src="/logo.svg" alt="FolioAI" width={28} height={28} style={{ borderRadius: 8 }} />
             <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 16, color: 'var(--primary)' }}>FolioAI</span>
           </Link>
           <span style={{ color: 'var(--border)' }}>·</span>

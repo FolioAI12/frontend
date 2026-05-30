@@ -460,7 +460,6 @@ export function buildGeminiPrompt(data: PortfolioData): string {
     education: data.education.length ? data.education : null,
     projects: data.projects.length ? data.projects : null,
     certifications: data.certifications.length ? data.certifications : null,
-    testimonials: data.testimonials.length ? data.testimonials : null,
     social: Object.keys(cleanSocial).length ? cleanSocial : null,
   };
 

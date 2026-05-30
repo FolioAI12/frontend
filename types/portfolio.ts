@@ -36,14 +36,6 @@ export interface Certification {
   credlyLink?: string;
 }
 
-export interface Testimonial {
-  id: string;
-  name: string;
-  role: string;
-  company: string;
-  text: string;
-}
-
 export type TemplateStyle = 'minimal' | 'corporate' | 'creative' | 'technical' | 'academic';
 export type OutputFormat = 'html' | 'pdf' | 'pptx';
 export type FontStyle = 'modern' | 'classic' | 'mono' | 'humanist';
@@ -68,7 +60,6 @@ export interface PortfolioData {
   education: Education[];
   projects: Project[];
   certifications: Certification[];
-  testimonials: Testimonial[];
 
   // Social
   linkedin: string;
@@ -90,7 +81,6 @@ export interface PortfolioData {
     education: boolean;
     projects: boolean;
     certifications: boolean;
-    testimonials: boolean;
     languages: boolean;
     social: boolean;
   };
@@ -109,7 +99,6 @@ export const defaultPortfolioData: PortfolioData = {
   education: [],
   projects: [],
   certifications: [],
-  testimonials: [],
   linkedin: '',
   github: '',
   twitter: '',
@@ -127,7 +116,6 @@ export const defaultPortfolioData: PortfolioData = {
     education: true,
     projects: true,
     certifications: true,
-    testimonials: false,
     languages: true,
     social: true,
   },
