@@ -106,7 +106,6 @@ export default function SocialInputStep({ onNext, onBack }: { onNext: () => void
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
           padding: '4px 12px', borderRadius: 99,
-          background: 'linear-gradient(135deg, rgba(0,119,181,0.1), rgba(108,99,255,0.1))',
           border: '1px solid rgba(108,99,255,0.2)',
           fontSize: 12, fontWeight: 600,
           background: 'none',
