@@ -4,33 +4,41 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { motion, useScroll, useTransform, useSpring, AnimatePresence, useInView } from 'motion/react';
+import { useGSAP } from '@gsap/react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
 
+gsap.registerPlugin(ScrollTrigger);
+
+/* ─── Data ─────────────────────────────────────────────── */
 const TICKER = [
-  { name: 'Priya Nair', role: 'Senior Product Designer', template: 'minimal', color: '#00C9A7' },
-  { name: 'Marcus Williams', role: 'Full Stack Engineer', template: 'technical', color: '#00FF88' },
-  { name: 'Aisha Khan', role: 'Data Scientist', template: 'corporate', color: '#4A90D9' },
-  { name: 'Alex Rivera', role: 'Creative Director', template: 'creative', color: '#FF6B6B' },
+  { name: 'Priya Nair', role: 'Senior Product Designer', color: '#00C9A7' },
+  { name: 'Marcus Williams', role: 'Full Stack Engineer', color: '#6C63FF' },
+  { name: 'Aisha Khan', role: 'Data Scientist', color: '#4A90D9' },
+  { name: 'Alex Rivera', role: 'Creative Director', color: '#FF6B6B' },
 ];
 
 const TEMPLATES = [
-  { id: 'minimal',   name: 'Minimal',   desc: 'Designers & Writers',   bg: '#FAFAFA', accent: '#111111', dark: false },
-  { id: 'corporate', name: 'Corporate', desc: 'Finance & Consulting',  bg: '#1B2A4A', accent: '#4A90D9', dark: true },
-  { id: 'creative',  name: 'Creative',  desc: 'Artists & Marketers',   bg: '#111111', accent: '#FF6B6B', dark: true },
-  { id: 'technical', name: 'Technical', desc: 'Developers & Engineers',bg: '#0D1117', accent: '#00FF88', dark: true },
-  { id: 'academic',  name: 'Academic',  desc: 'Researchers & Profs',   bg: '#FDF8F0', accent: '#8B4513', dark: false },
+  { id: 'minimal', name: 'Minimal', desc: 'Designers & Writers', bg: '#FAFAFA', accent: '#111111' },
+  { id: 'corporate', name: 'Corporate', desc: 'Finance & Consulting', bg: '#1B2A4A', accent: '#4A90D9' },
+  { id: 'creative', name: 'Creative', desc: 'Artists & Marketers', bg: '#111111', accent: '#FF6B6B' },
+  { id: 'technical', name: 'Technical', desc: 'Developers & Engineers', bg: '#0D1117', accent: '#00FF88' },
+  { id: 'academic', name: 'Academic', desc: 'Researchers & Profs', bg: '#FDF8F0', accent: '#8B4513' },
 ];
 
 const FEATURES = [
-  { icon: '🤖', title: 'Gemini AI Generation', desc: 'Gemini reads your data and writes production-quality HTML+CSS with professional copy, animations, and mobile layouts.' },
-  { icon: '🎨', title: '5 Curated Templates', desc: 'Minimal, Corporate, Creative, Technical, Academic — each with its own complete design system tailored to your industry.' },
-  { icon: '📦', title: '3 Export Formats', desc: 'Download as a self-contained HTML website, print to PDF via browser, or export a full PowerPoint slide deck.' },
-  { icon: '✍️', title: 'AI Bio Improver', desc: 'Paste a weak bio and Gemini rewrites it into compelling, professional copy that stands out.' },
-  { icon: '📱', title: 'Split Preview', desc: 'See your portfolio side-by-side in desktop and mobile phone views before you download.' },
-  { icon: '💾', title: 'Save & History', desc: 'All your portfolios saved to your account. Preview, re-download, or delete any time.' },
+  { icon: '🤖', title: 'Gemini AI Generation', desc: 'Reads your data and writes production-quality HTML+CSS with professional copy, animations, and mobile layouts.' },
+  { icon: '🎨', title: '5 Curated Templates', desc: 'Minimal, Corporate, Creative, Technical, Academic — each with its own complete design system.' },
+  { icon: '📦', title: '3 Export Formats', desc: 'Download as HTML, print to PDF, or export a full PowerPoint deck.' },
+  { icon: '✍️', title: 'AI Bio Improver', desc: 'Paste a weak bio and Gemini rewrites it into compelling, professional copy.' },
+  { icon: '📱', title: 'Split Preview', desc: 'See your portfolio side-by-side in desktop and mobile before you download.' },
+  { icon: '💾', title: 'Save & History', desc: 'All portfolios saved to your account. Preview, re-download, or delete any time.' },
 ];
 
-const STEPS_FLOW = [
-  { num: '01', title: 'Fill your details', desc: 'Name, bio, skills, experience, projects, education — a guided multi-step form.' },
+const STEPS = [
+  { num: '01', title: 'Fill your details', desc: 'Name, bio, skills, experience — a guided multi-step form.' },
   { num: '02', title: 'Pick a template', desc: 'Choose your style, accent color, font, and layout.' },
   { num: '03', title: 'AI generates it', desc: 'Gemini crafts a complete, responsive portfolio in ~20 seconds.' },
   { num: '04', title: 'Download & share', desc: 'Get HTML, PDF, or PowerPoint. Done.' },
@@ -7521,28 +7529,330 @@ const EXAMPLES = [
   },
 ];
 
-function useInView(ref: React.RefObject<Element | null>) {
-  const [inView, setInView] = useState(false);
-  useEffect(() => {
-    if (!ref.current) return;
-    const observer = new IntersectionObserver(([e]) => { if (e.isIntersecting) setInView(true); }, { threshold: 0.1 });
-    observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [ref]);
-  return inView;
+function FadeUp({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-60px' });
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 28 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.65, delay, ease: [0.16, 1, 0.3, 1] }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
 }
 
+/* ─── Magnetic Button ───────────────────────────────────── */
+function MagneticBtn({ children, href, className = '', style = {} }: { children: React.ReactNode; href: string; className?: string; style?: React.CSSProperties }) {
+  const ref = useRef<HTMLAnchorElement>(null);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+
+  const springX = useSpring(pos.x, { stiffness: 200, damping: 20 });
+  const springY = useSpring(pos.y, { stiffness: 200, damping: 20 });
+
+  function handleMove(e: React.MouseEvent) {
+    const el = ref.current!;
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    setPos({ x: (e.clientX - cx) * 0.25, y: (e.clientY - cy) * 0.25 });
+  }
+
+  function handleLeave() { setPos({ x: 0, y: 0 }); }
+
+  return (
+    <motion.a
+      ref={ref}
+      href={href}
+      style={{ x: springX, y: springY, ...style }}
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      className={className}
+    >
+      {children}
+    </motion.a>
+  );
+}
+
+/* ─── Feature Card ──────────────────────────────────────── */
+function FeatureCard({ f, i }: { f: typeof FEATURES[0]; i: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-40px' });
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 30 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.6, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+      whileHover={{ scale: 1.03, rotateX: 4, z: 20 }}
+      style={{ transformStyle: 'preserve-3d', transformOrigin: 'center bottom' }}
+      className="feature-card card"
+    >
+      <motion.div
+        className="feature-icon-wrap"
+        whileHover={{ rotate: 12, scale: 1.2 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+      >
+        <span style={{ fontSize: 28 }}>{f.icon}</span>
+      </motion.div>
+      <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 15, fontWeight: 700, color: 'var(--primary)', marginBottom: 8, marginTop: 14 }}>{f.title}</h3>
+      <p style={{ color: 'var(--text-secondary)', fontSize: 13.5, lineHeight: 1.65 }}>{f.desc}</p>
+    </motion.div>
+  );
+}
+
+/* ─── Template Card ─────────────────────────────────────── */
+function TemplateCard({ t, i }: { t: typeof TEMPLATES[0]; i: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-40px' });
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 24 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.55, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <Link href="/builder" style={{ textDecoration: 'none' }}>
+        <motion.div
+          className="template-card card"
+          onHoverStart={() => setHovered(true)}
+          onHoverEnd={() => setHovered(false)}
+          whileHover={{ scale: 1.05, rotateX: 5, rotateY: -3 }}
+          style={{
+            transformStyle: 'preserve-3d',
+            boxShadow: hovered ? `0 20px 60px ${t.accent}30, 0 4px 16px rgba(0,0,0,0.12)` : undefined,
+            transition: 'box-shadow 0.3s ease',
+          }}
+        >
+          <div style={{ height: 110, background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', borderRadius: '12px 12px 0 0' }}>
+            <motion.div
+              animate={hovered ? { scale: 1.08 } : { scale: 1 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ width: 52, height: 6, borderRadius: 3, background: t.accent, margin: '0 auto 8px', boxShadow: hovered ? `0 0 20px ${t.accent}90` : 'none', transition: 'box-shadow 0.3s' }} />
+                <div style={{ width: 36, height: 3, borderRadius: 2, background: t.accent, opacity: 0.35, margin: '0 auto 5px' }} />
+                <div style={{ width: 44, height: 3, borderRadius: 2, background: t.accent, opacity: 0.2, margin: '0 auto' }} />
+              </div>
+            </motion.div>
+          </div>
+          <div style={{ padding: '14px 16px' }}>
+            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 14, color: 'var(--primary)', marginBottom: 3 }}>{t.name}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{t.desc}</div>
+          </div>
+        </motion.div>
+      </Link>
+    </motion.div>
+  );
+}
+
+/* ─── Step Card with GSAP line draw ────────────────────────── */
+function StepsSection() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const lineRef = useRef<SVGPathElement>(null);
+
+  useGSAP(() => {
+    if (!containerRef.current || !lineRef.current) return;
+
+    // Draw connecting line on scroll
+    gsap.fromTo(lineRef.current,
+      { strokeDashoffset: '100%' },
+      {
+        strokeDashoffset: '0%',
+        ease: 'none',
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: 'top 70%',
+          end: 'bottom 40%',
+          scrub: 1,
+        },
+      }
+    );
+
+    // Step numbers animate in
+    gsap.fromTo('.step-num', { opacity: 0, scale: 0.5 }, {
+      opacity: 1, scale: 1,
+      stagger: 0.15,
+      ease: 'back.out(1.8)',
+      scrollTrigger: {
+        trigger: containerRef.current,
+        start: 'top 70%',
+      },
+    });
+
+    // Step descriptions slide in from left
+    gsap.fromTo('.step-desc', { opacity: 0, x: -30 }, {
+      opacity: 1, x: 0,
+      stagger: 0.12,
+      ease: 'power3.out',
+      scrollTrigger: {
+        trigger: containerRef.current,
+        start: 'top 65%',
+      },
+    });
+  }, { scope: containerRef });
+
+  return (
+    <section style={{ background: 'white', padding: '96px 24px', position: 'relative' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <FadeUp style={{ textAlign: 'center', marginBottom: 56 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--purple)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 12 }}>HOW IT WORKS</div>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px,5vw,44px)', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.02em' }}>Four steps to your portfolio</h2>
+        </FadeUp>
+        <div ref={containerRef} style={{ position: 'relative' }}>
+          {/* Animated connecting line */}
+          <svg style={{ position: 'absolute', top: 28, left: '12.5%', width: '75%', height: 4, pointerEvents: 'none', zIndex: 0, display: 'block' }} className="hide-mobile">
+            <path
+              ref={lineRef}
+              d="M0 2 L100% 2"
+              stroke="url(#stepGrad)"
+              strokeWidth="2"
+              fill="none"
+              strokeDasharray="100%"
+              strokeLinecap="round"
+            />
+            <defs>
+              <linearGradient id="stepGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#00C9A7" />
+                <stop offset="100%" stopColor="#6C63FF" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 0, position: 'relative', zIndex: 1 }}>
+            {STEPS.map((s, i) => (
+              <div key={s.num} style={{ padding: '32px 28px', textAlign: 'center' }}>
+                <div className="step-num" style={{
+                  fontFamily: 'var(--font-heading)', fontSize: 48, fontWeight: 900,
+                  background: 'linear-gradient(135deg, var(--accent), var(--purple))',
+                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                  lineHeight: 1, marginBottom: 14, display: 'block',
+                }}>{s.num}</div>
+                <div className="step-desc">
+                  <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 16, fontWeight: 700, color: 'var(--primary)', marginBottom: 8 }}>{s.title}</h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.65 }}>{s.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Generate With Credentials Section ─────────────────── */
+function GenerateWithCredentialsSection() {
+  const { user, signIn } = useAuth();
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-60px' });
+
+  return (
+    <section ref={ref} style={{ background: 'linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)', padding: '96px 24px', position: 'relative', overflow: 'hidden' }}>
+      {/* Background orbs */}
+      <div style={{ position: 'absolute', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,201,167,0.08) 0%, transparent 70%)', top: -200, left: '60%', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(108,99,255,0.1) 0%, transparent 70%)', bottom: -100, left: '20%', pointerEvents: 'none' }} />
+      
+      <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          style={{ textAlign: 'center', marginBottom: 64 }}
+        >
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 16px', background: 'rgba(0,201,167,0.12)', border: '1px solid rgba(0,201,167,0.3)', borderRadius: 99, marginBottom: 20, fontSize: 12, fontWeight: 700, color: 'var(--accent)' }}>
+            ⚡ NEW — Generate with Your Profile
+          </div>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px,5vw,44px)', fontWeight: 800, color: 'white', letterSpacing: '-0.02em', marginBottom: 14 }}>
+            One-click portfolio<br/>
+            <span style={{ background: 'linear-gradient(135deg, #00C9A7, #6C63FF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>from your Google account</span>
+          </h2>
+          <p style={{ fontSize: 17, color: 'rgba(255,255,255,0.55)', maxWidth: 500, margin: '0 auto 40px' }}>
+            Sign in with Google and FolioAI scans your profile picture, name, bio, and social links — pre-filling the entire form instantly.
+          </p>
+          {!user ? (
+            <motion.button
+              onClick={signIn}
+              whileHover={{ scale: 1.05, boxShadow: '0 20px 60px rgba(0,201,167,0.4)' }}
+              whileTap={{ scale: 0.96 }}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 12,
+                padding: '16px 36px', background: 'white',
+                border: 'none', borderRadius: 14, cursor: 'pointer',
+                fontFamily: 'var(--font-heading)', fontSize: 16, fontWeight: 800, color: 'var(--primary)',
+                boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
+              }}
+            >
+              <img src="https://www.google.com/favicon.ico" alt="Google" style={{ width: 20, height: 20 }} />
+              Sign in with Google
+            </motion.button>
+          ) : (
+            <Link href="/builder">
+              <motion.div
+                whileHover={{ scale: 1.05, boxShadow: '0 20px 60px rgba(0,201,167,0.4)' }}
+                whileTap={{ scale: 0.96 }}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 12,
+                  padding: '16px 36px', background: 'linear-gradient(135deg, var(--accent), #00a688)',
+                  borderRadius: 14, cursor: 'pointer',
+                  fontFamily: 'var(--font-heading)', fontSize: 16, fontWeight: 800, color: 'var(--primary)',
+                  boxShadow: '0 8px 40px rgba(0,201,167,0.3)',
+                }}
+              >
+                {user.photoURL && <img src={user.photoURL} alt="" style={{ width: 28, height: 28, borderRadius: '50%' }} />}
+                Generate My Portfolio →
+              </motion.div>
+            </Link>
+          )}
+        </motion.div>
+
+        {/* What gets scanned */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+          {[
+            { icon: '📸', label: 'Profile Picture', desc: 'Embedded in your portfolio' },
+            { icon: '✍️', label: 'Your Name & Bio', desc: 'From your Google profile' },
+            { icon: '🔗', label: 'Social Links', desc: 'LinkedIn, GitHub & more' },
+            { icon: '📧', label: 'Email Address', desc: 'For contact section' },
+          ].map((item, i) => (
+            <motion.div
+              key={item.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.5, delay: 0.3 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 16, padding: '24px 20px', textAlign: 'center',
+              }}
+            >
+              <div style={{ fontSize: 28, marginBottom: 10 }}>{item.icon}</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: 'white', marginBottom: 4 }}>{item.label}</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{item.desc}</div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Main Page ─────────────────────────────────────────── */
 export default function HomePage() {
   const { user, signIn } = useAuth();
   const [tickerIdx, setTickerIdx] = useState(0);
   const [tickerVisible, setTickerVisible] = useState(true);
   const [activeExample, setActiveExample] = useState(0);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollY } = useScroll();
+  const heroOpacity = useTransform(scrollY, [0, 400], [1, 0]);
+  const heroY = useTransform(scrollY, [0, 400], [0, -80]);
 
-  const featuresRef = useRef<HTMLElement>(null);
-  const stepsRef = useRef<HTMLElement>(null);
-  const featuresInView = useInView(featuresRef);
-  const stepsInView = useInView(stepsRef);
-
+  // Ticker rotation
   useEffect(() => {
     const t = setInterval(() => {
       setTickerVisible(false);
@@ -7551,90 +7861,206 @@ export default function HomePage() {
     return () => clearInterval(t);
   }, []);
 
+  // GSAP hero title letter-by-letter reveal
+  useGSAP(() => {
+    const chars = document.querySelectorAll('.hero-char');
+    if (!chars.length) return;
+    gsap.from(chars, {
+      opacity: 0, y: 40,
+      stagger: 0.03,
+      duration: 0.6,
+      ease: 'back.out(1.4)',
+      delay: 0.2,
+    });
+  }, []);
+
   const current = TICKER[tickerIdx];
+
+  // Split hero title into chars
+  const heroLine1 = 'Your portfolio,';
+  const heroLine2 = 'built by AI.';
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', overflowX: 'hidden' }}>
 
       {/* ── NAV ── */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 100,
-        background: 'rgba(247,247,245,0.92)',
-        backdropFilter: 'blur(16px)',
-        borderBottom: '1px solid var(--border)',
-        padding: '0 24px', height: 60,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
+      <motion.nav
+        initial={{ y: -64, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          position: 'sticky', top: 0, zIndex: 100,
+          background: 'rgba(247,247,245,0.92)',
+          backdropFilter: 'blur(16px)',
+          borderBottom: '1px solid var(--border)',
+          padding: '0 24px', height: 60,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <Image src="/logo.png" alt="FolioAI" width={30} height={30} style={{ borderRadius: 8 }} />
+          <motion.div whileHover={{ rotate: 8, scale: 1.08 }} transition={{ type: 'spring', stiffness: 400 }}>
+            <Image src="/logo.png" alt="FolioAI" width={30} height={30} style={{ borderRadius: 8 }} />
+          </motion.div>
           <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 17, color: 'var(--primary)' }}>FolioAI</span>
         </div>
         <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-          <a href="#features" className="nav-link hide-mobile">Features</a>
-          <a href="#examples" className="nav-link hide-mobile" style={{ marginLeft: 12 }}>Examples</a>
-          <a href="#templates" className="nav-link hide-mobile" style={{ marginLeft: 12 }}>Templates</a>
+          {['#features', '#examples', '#templates'].map((href, i) => (
+            <motion.a key={href} href={href} className="nav-link hide-mobile"
+              style={{ marginLeft: i > 0 ? 12 : 0 }}
+              whileHover={{ color: 'var(--accent)' }}
+            >
+              {href.slice(1).charAt(0).toUpperCase() + href.slice(2)}
+            </motion.a>
+          ))}
           {user && <Link href="/history" className="nav-link hide-mobile" style={{ marginLeft: 12 }}>History</Link>}
           <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 12px' }} className="hide-mobile" />
-          {user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {user.photoURL && <img src={user.photoURL} alt="" style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid var(--border)' }} />}
-              <Link href="/builder" className="btn btn-primary" style={{ fontSize: 13, padding: '8px 16px' }}>Open Builder →</Link>
-            </div>
-          ) : (
-            <Link href="/builder" className="btn btn-primary" style={{ fontSize: 13, padding: '8px 16px' }}>Get Started →</Link>
-          )}
+          <AnimatePresence mode="wait">
+            {user ? (
+              <motion.div key="user" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {user.photoURL && <img src={user.photoURL} alt="" style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid var(--border)' }} />}
+                <Link href="/builder">
+                  <motion.div className="btn btn-primary" style={{ fontSize: 13, padding: '8px 16px' }}
+                    whileHover={{ scale: 1.04, boxShadow: '0 8px 24px rgba(0,201,167,0.35)' }}
+                    whileTap={{ scale: 0.96 }}
+                  >Open Builder →</motion.div>
+                </Link>
+              </motion.div>
+            ) : (
+              <motion.div key="guest" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
+                <Link href="/builder">
+                  <motion.div className="btn btn-primary" style={{ fontSize: 13, padding: '8px 16px' }}
+                    whileHover={{ scale: 1.04, boxShadow: '0 8px 24px rgba(0,201,167,0.35)' }}
+                    whileTap={{ scale: 0.96 }}
+                  >Get Started →</motion.div>
+                </Link>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* ── HERO ── */}
-      <section style={{ maxWidth: 1100, margin: '0 auto', padding: 'clamp(60px,8vw,110px) 24px 80px', textAlign: 'center', position: 'relative' }}>
-        {/* Background orbs */}
-        <div className="orb" style={{ width: 500, height: 500, background: 'var(--accent)', top: -100, left: '60%', opacity: 0.06 }} />
-        <div className="orb" style={{ width: 400, height: 400, background: 'var(--purple)', top: 50, right: '65%', opacity: 0.06 }} />
+      <motion.section
+        ref={heroRef}
+        style={{ opacity: heroOpacity, y: heroY, maxWidth: 1100, margin: '0 auto', padding: 'clamp(60px,8vw,110px) 24px 80px', textAlign: 'center', position: 'relative' }}
+      >
+        {/* Animated gradient background */}
+        <div className="hero-gradient-bg" />
+
+        {/* Orbs */}
+        <motion.div
+          animate={{ x: [0, 30, -20, 0], y: [0, -20, 15, 0] }}
+          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+          className="orb"
+          style={{ width: 500, height: 500, background: 'var(--accent)', top: -100, left: '60%', opacity: 0.07 }}
+        />
+        <motion.div
+          animate={{ x: [0, -25, 18, 0], y: [0, 20, -10, 0] }}
+          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+          className="orb"
+          style={{ width: 400, height: 400, background: 'var(--purple)', top: 50, right: '65%', opacity: 0.07 }}
+        />
 
         {/* Badge */}
-        <div className="fade-up" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 16px', background: 'var(--accent-soft)', border: '1px solid rgba(0,201,167,0.3)', borderRadius: 99, marginBottom: 28, fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)', animation: 'pulse 2s ease infinite', display: 'inline-block' }} />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.1, type: 'spring', stiffness: 300 }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 16px', background: 'var(--accent-soft)', border: '1px solid rgba(0,201,167,0.3)', borderRadius: 99, marginBottom: 28, fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}
+        >
+          <motion.span
+            animate={{ scale: [1, 1.4, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }}
+          />
           Powered by Google Gemini AI
-        </div>
+        </motion.div>
 
-        <h1 className="fade-up anim-delay-1" style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(40px,7vw,82px)', fontWeight: 800, lineHeight: 1.04, color: 'var(--primary)', letterSpacing: '-0.03em', marginBottom: 24 }}>
-          Your portfolio,<br />
-          <span className="gradient-text-animate">built by AI.</span>
+        {/* Staggered title */}
+        <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(40px,7vw,82px)', fontWeight: 800, lineHeight: 1.04, color: 'var(--primary)', letterSpacing: '-0.03em', marginBottom: 24 }}>
+          <div>
+            {heroLine1.split('').map((ch, i) => (
+              <span key={i} className="hero-char" style={{ display: 'inline-block', whiteSpace: ch === ' ' ? 'pre' : undefined }}>{ch}</span>
+            ))}
+          </div>
+          <div>
+            {heroLine2.split('').map((ch, i) => (
+              <span key={i} className="hero-char gradient-text-animate" style={{ display: 'inline-block', whiteSpace: ch === ' ' ? 'pre' : undefined }}>{ch}</span>
+            ))}
+          </div>
         </h1>
 
-        <p className="fade-up anim-delay-2" style={{ fontSize: 'clamp(16px,2.5vw,19px)', color: 'var(--text-secondary)', maxWidth: 520, margin: '0 auto 40px', lineHeight: 1.65 }}>
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          style={{ fontSize: 'clamp(16px,2.5vw,19px)', color: 'var(--text-secondary)', maxWidth: 520, margin: '0 auto 40px', lineHeight: 1.65 }}
+        >
           Fill in your details, pick a template, and download a stunning portfolio website, PDF, or PowerPoint — in under 2 minutes.
-        </p>
+        </motion.p>
 
         {/* Ticker */}
-        <div className="fade-up anim-delay-3" style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: '10px 18px', marginBottom: 40, boxShadow: 'var(--shadow-sm)' }}>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', background: `linear-gradient(135deg, ${current.color}, var(--purple))`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 13, flexShrink: 0, transition: 'background 0.4s' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.7 }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: '10px 18px', marginBottom: 40, boxShadow: 'var(--shadow-sm)' }}
+        >
+          <motion.div
+            key={tickerIdx}
+            initial={{ scale: 0.7, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            style={{ width: 36, height: 36, borderRadius: '50%', background: `linear-gradient(135deg, ${current.color}, var(--purple))`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 13, flexShrink: 0 }}
+          >
             {current.name.split(' ').map(n => n[0]).join('')}
-          </div>
+          </motion.div>
           <div style={{ textAlign: 'left', minWidth: 160 }}>
-            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 14, color: 'var(--primary)', opacity: tickerVisible ? 1 : 0, transition: 'opacity 0.3s' }}>{current.name}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-secondary)', opacity: tickerVisible ? 1 : 0, transition: 'opacity 0.3s', transitionDelay: '0.05s' }}>{current.role}</div>
+            <AnimatePresence mode="wait">
+              <motion.div key={tickerIdx} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }}>
+                <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 14, color: 'var(--primary)' }}>{current.name}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{current.role}</div>
+              </motion.div>
+            </AnimatePresence>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '3px 10px', background: '#f0fdf4', borderRadius: 99, fontSize: 11, fontWeight: 600, color: '#16a34a' }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
             Generated
           </div>
-        </div>
+        </motion.div>
 
         {/* CTAs */}
-        <div className="fade-up anim-delay-4" style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link href="/builder" className="btn btn-gradient" style={{ padding: '15px 36px', fontSize: 16 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.8 }}
+          style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}
+        >
+          <MagneticBtn
+            href="/builder"
+            className="btn btn-gradient"
+            style={{ padding: '15px 36px', fontSize: 16, display: 'inline-block' }}
+          >
             Build My Portfolio ✨
-          </Link>
-          <a href="#examples" className="btn btn-ghost" style={{ padding: '15px 28px', fontSize: 15 }}>
+          </MagneticBtn>
+          <motion.a
+            href="#examples"
+            className="btn btn-ghost"
+            style={{ padding: '15px 28px', fontSize: 15 }}
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+          >
             See Examples
-          </a>
-        </div>
-        <p className="fade-up anim-delay-5" style={{ marginTop: 16, fontSize: 12, color: 'var(--text-secondary)' }}>
+          </motion.a>
+        </motion.div>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+          style={{ marginTop: 16, fontSize: 12, color: 'var(--text-secondary)' }}
+        >
           Free · No credit card · Download instantly
-        </p>
-      </section>
+        </motion.p>
+      </motion.section>
 
       {/* ── STATS BAR ── */}
       <div style={{ background: 'var(--primary)', padding: '40px 24px' }}>
@@ -7644,166 +8070,136 @@ export default function HomePage() {
             { n: '3', u: 'Export Formats', d: 'HTML · PDF · PPTX' },
             { n: '<30s', u: 'Generation Time', d: 'Gemini is fast' },
             { n: '100%', u: 'Self-Contained', d: 'Works offline' },
-          ].map(s => (
-            <div key={s.u}>
-              <div style={{ fontFamily: 'var(--font-heading)', fontSize: 36, fontWeight: 800, color: 'var(--accent)', lineHeight: 1 }}>{s.n}</div>
-              <div style={{ fontWeight: 600, fontSize: 14, color: 'white', margin: '6px 0 3px' }}>{s.u}</div>
-              <div style={{ fontSize: 12, opacity: 0.5, color: 'white' }}>{s.d}</div>
-            </div>
+          ].map((s, i) => (
+            <FadeUp key={s.u} delay={i * 0.08}>
+              <motion.div
+                initial={{ scale: 0.8 }}
+                whileInView={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 300, delay: i * 0.06 }}
+                viewport={{ once: true }}
+              >
+                <div style={{ fontFamily: 'var(--font-heading)', fontSize: 36, fontWeight: 800, color: 'var(--accent)', lineHeight: 1 }}>{s.n}</div>
+                <div style={{ fontWeight: 600, fontSize: 14, color: 'white', margin: '6px 0 3px' }}>{s.u}</div>
+                <div style={{ fontSize: 12, opacity: 0.5, color: 'white' }}>{s.d}</div>
+              </motion.div>
+            </FadeUp>
           ))}
         </div>
       </div>
 
       {/* ── FEATURES ── */}
-      <section id="features" ref={featuresRef as React.RefObject<HTMLElement>} style={{ maxWidth: 1100, margin: '0 auto', padding: '96px 24px' }}>
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
+      <section id="features" style={{ maxWidth: 1100, margin: '0 auto', padding: '96px 24px' }}>
+        <FadeUp style={{ textAlign: 'center', marginBottom: 56 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 12 }}>FEATURES</div>
           <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px,5vw,44px)', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.02em', marginBottom: 14 }}>Everything you need</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: 17, maxWidth: 460, margin: '0 auto' }}>A complete AI portfolio builder for professionals across every industry.</p>
-        </div>
+        </FadeUp>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
-          {FEATURES.map((f, i) => (
-            <div key={f.title} className="card" style={{ padding: '28px', opacity: featuresInView ? 1 : 0, transform: featuresInView ? 'none' : 'translateY(20px)', transition: `opacity 0.5s ease ${i * 0.07}s, transform 0.5s ease ${i * 0.07}s` }}>
-              <div style={{ fontSize: 28, marginBottom: 14 }}>{f.icon}</div>
-              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 16, fontWeight: 700, color: 'var(--primary)', marginBottom: 8 }}>{f.title}</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.65 }}>{f.desc}</p>
-            </div>
-          ))}
+          {FEATURES.map((f, i) => <FeatureCard key={f.title} f={f} i={i} />)}
         </div>
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section ref={stepsRef as React.RefObject<HTMLElement>} style={{ background: 'white', padding: '96px 24px' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--purple)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 12 }}>HOW IT WORKS</div>
-            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px,5vw,44px)', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.02em' }}>Four steps to your portfolio</h2>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 0 }}>
-            {STEPS_FLOW.map((s, i) => (
-              <div key={s.num} style={{
-                padding: '32px 28px', position: 'relative',
-                opacity: stepsInView ? 1 : 0,
-                transform: stepsInView ? 'none' : 'translateY(16px)',
-                transition: `opacity 0.5s ease ${i * 0.1}s, transform 0.5s ease ${i * 0.1}s`,
-              }}>
-                {i < STEPS_FLOW.length - 1 && (
-                  <div className="hide-mobile" style={{ position: 'absolute', top: 44, right: 0, width: '30%', height: 1, background: 'linear-gradient(90deg, var(--border), transparent)' }} />
-                )}
-                <div style={{ fontFamily: 'var(--font-heading)', fontSize: 40, fontWeight: 800, color: 'var(--accent)', opacity: 0.25, lineHeight: 1, marginBottom: 10 }}>{s.num}</div>
-                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 17, fontWeight: 700, color: 'var(--primary)', marginBottom: 8 }}>{s.title}</h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.65 }}>{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <StepsSection />
 
       {/* ── EXAMPLES ── */}
       <section id="examples" style={{ maxWidth: 1100, margin: '0 auto', padding: '96px 24px' }}>
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+        <FadeUp style={{ textAlign: 'center', marginBottom: 48 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 12 }}>LIVE EXAMPLES</div>
           <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px,5vw,44px)', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.02em', marginBottom: 14 }}>See what gets generated</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: 17 }}>Real portfolio HTML generated by FolioAI. Click to switch.</p>
-        </div>
-
-        {/* Tab buttons */}
+        </FadeUp>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 32, flexWrap: 'wrap' }}>
           {EXAMPLES.map((ex, i) => (
-            <button key={ex.id} onClick={() => setActiveExample(i)} className="btn" style={{
-              padding: '8px 18px', fontSize: 13,
-              background: activeExample === i ? 'var(--primary)' : 'white',
-              color: activeExample === i ? 'white' : 'var(--text-secondary)',
-              border: `1.5px solid ${activeExample === i ? 'var(--primary)' : 'var(--border)'}`,
-              borderRadius: 99,
-            }}>
-              {ex.template}
-            </button>
+            <motion.button
+              key={ex.id}
+              onClick={() => setActiveExample(i)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.96 }}
+              style={{
+                padding: '8px 18px', fontSize: 13, borderRadius: 99, cursor: 'pointer',
+                background: activeExample === i ? 'var(--primary)' : 'white',
+                color: activeExample === i ? 'white' : 'var(--text-secondary)',
+                border: `1.5px solid ${activeExample === i ? 'var(--primary)' : 'var(--border)'}`,
+                fontWeight: 600,
+                boxShadow: activeExample === i ? '0 4px 16px rgba(26,26,46,0.2)' : 'none',
+                transition: 'background 0.2s, color 0.2s, border-color 0.2s',
+              }}
+            >{ex.template}</motion.button>
           ))}
         </div>
-
-        {/* Preview window */}
-        <div style={{ borderRadius: 16, overflow: 'hidden', boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border)' }}>
-          {/* Chrome bar */}
-          <div style={{ background: '#1C1C1E', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {['#FF5F57','#FEBC2E','#28C840'].map(c => <div key={c} style={{ width: 10, height: 10, borderRadius: '50%', background: c }} />)}
+        <FadeUp>
+          <motion.div
+            style={{ borderRadius: 16, overflow: 'hidden', boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border)' }}
+            whileHover={{ boxShadow: '0 32px 80px rgba(0,0,0,0.18)' }}
+            transition={{ duration: 0.3 }}
+          >
+            <div style={{ background: '#1C1C1E', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {['#FF5F57','#FEBC2E','#28C840'].map(c => <div key={c} style={{ width: 10, height: 10, borderRadius: '50%', background: c }} />)}
+              </div>
+              <div style={{ flex: 1, background: '#2C2C2E', borderRadius: 5, padding: '3px 12px', fontSize: 11, color: '#8E8E93', fontFamily: 'monospace' }}>
+                portfolio-preview.html
+              </div>
             </div>
-            <div style={{ flex: 1, background: '#2C2C2E', borderRadius: 5, padding: '3px 12px', fontSize: 11, color: '#8E8E93', fontFamily: 'monospace' }}>
-              {EXAMPLES[activeExample].name.toLowerCase().replace(' ', '')}portfolio.html
+            <div style={{ position: 'relative', height: 560, background: 'white' }}>
+              {EXAMPLES.map((ex, i) => (
+                <iframe
+                  key={ex.id}
+                  srcDoc={ex.html}
+                  style={{
+                    position: 'absolute', inset: 0, width: '100%', height: '100%',
+                    border: 'none',
+                    opacity: activeExample === i ? 1 : 0,
+                    transition: 'opacity 0.4s ease',
+                    pointerEvents: activeExample === i ? 'auto' : 'none',
+                  }}
+                  title={`${ex.name} portfolio`}
+                  sandbox="allow-scripts allow-same-origin"
+                />
+              ))}
             </div>
-            <div style={{ fontSize: 11, color: '#555', fontFamily: 'monospace' }}>{EXAMPLES[activeExample].template}</div>
-          </div>
-          {/* iframe */}
-          <div style={{ position: 'relative', height: 620, background: 'white' }}>
-            {EXAMPLES.map((ex, i) => (
-              <iframe
-                key={ex.id}
-                srcDoc={ex.html}
-                style={{
-                  position: 'absolute', inset: 0, width: '100%', height: '100%',
-                  border: 'none',
-                  opacity: activeExample === i ? 1 : 0,
-                  transition: 'opacity 0.4s ease',
-                  pointerEvents: activeExample === i ? 'auto' : 'none',
-                }}
-                title={`${ex.name} portfolio`}
-                sandbox="allow-scripts allow-same-origin"
-              />
-            ))}
-          </div>
-          {/* Footer bar */}
-          <div style={{ background: '#1C1C1E', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 12, color: '#8E8E93', fontFamily: 'monospace' }}>
-              {EXAMPLES[activeExample].name} · {EXAMPLES[activeExample].role}
-            </span>
-            <Link href="/builder" style={{ padding: '6px 14px', background: 'var(--accent)', color: 'var(--primary)', borderRadius: 6, fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
-              Create mine →
-            </Link>
-          </div>
-        </div>
+            <div style={{ background: '#1C1C1E', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 12, color: '#8E8E93', fontFamily: 'monospace' }}>
+                {EXAMPLES[activeExample].name} · {EXAMPLES[activeExample].role}
+              </span>
+              <Link href="/builder" style={{ padding: '6px 14px', background: 'var(--accent)', color: 'var(--primary)', borderRadius: 6, fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+                Create mine →
+              </Link>
+            </div>
+          </motion.div>
+        </FadeUp>
       </section>
 
       {/* ── TEMPLATES ── */}
       <section id="templates" style={{ background: 'white', padding: '96px 24px' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <FadeUp style={{ textAlign: 'center', marginBottom: 48 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--purple)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 12 }}>TEMPLATES</div>
             <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px,5vw,44px)', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.02em', marginBottom: 14 }}>Choose your style</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: 17 }}>Five distinct templates, each with a complete design system.</p>
-          </div>
+          </FadeUp>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 16 }}>
-            {TEMPLATES.map((t, i) => (
-              <Link key={t.id} href="/builder" style={{ textDecoration: 'none' }}>
-                <div className="template-card card" style={{ animationDelay: `${i * 0.06}s` }}>
-                  <div style={{ height: 110, background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ width: 52, height: 6, borderRadius: 3, background: t.accent, margin: '0 auto 8px', boxShadow: `0 0 16px ${t.accent}70` }} />
-                      <div style={{ width: 36, height: 3, borderRadius: 2, background: t.accent, opacity: 0.35, margin: '0 auto 5px' }} />
-                      <div style={{ width: 44, height: 3, borderRadius: 2, background: t.accent, opacity: 0.2, margin: '0 auto' }} />
-                    </div>
-                  </div>
-                  <div style={{ padding: '14px 16px' }}>
-                    <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 14, color: 'var(--primary)', marginBottom: 3 }}>{t.name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{t.desc}</div>
-                  </div>
-                </div>
-              </Link>
-            ))}
+            {TEMPLATES.map((t, i) => <TemplateCard key={t.id} t={t} i={i} />)}
           </div>
         </div>
       </section>
+
+      {/* ── GENERATE WITH CREDENTIALS ── */}
+      <GenerateWithCredentialsSection />
 
       {/* ── SKILLS MARQUEE ── */}
       <div style={{ background: 'var(--bg)', padding: '40px 0', overflow: 'hidden' }}>
         <div className="marquee-wrapper">
           <div className="marquee-track">
-            {[...Array(2)].map((_, repeatIdx) => (
-              <div key={repeatIdx} style={{ display: 'flex', gap: 12, paddingRight: 12 }}>
+            {[...Array(2)].map((_, ri) => (
+              <div key={ri} style={{ display: 'flex', gap: 12, paddingRight: 12 }}>
                 {['React', 'Figma', 'Product Design', 'Node.js', 'Python', 'UI/UX', 'TypeScript', 'AWS', 'Data Science', 'Branding', 'DevOps', 'Machine Learning', 'Consulting', 'Research', 'Marketing', 'Swift', 'Kotlin', 'Go'].map(s => (
-                  <span key={s} style={{ padding: '7px 18px', background: 'white', border: '1px solid var(--border)', borderRadius: 99, fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap', boxShadow: 'var(--shadow-sm)' }}>
-                    {s}
-                  </span>
+                  <motion.span
+                    key={s}
+                    whileHover={{ scale: 1.08, color: 'var(--accent)' }}
+                    style={{ padding: '7px 18px', background: 'white', border: '1px solid var(--border)', borderRadius: 99, fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap', boxShadow: 'var(--shadow-sm)', cursor: 'default' }}
+                  >{s}</motion.span>
                 ))}
               </div>
             ))}
@@ -7813,16 +8209,27 @@ export default function HomePage() {
 
       {/* ── CTA ── */}
       <section style={{ background: 'linear-gradient(135deg, var(--primary) 0%, #2D2B55 100%)', padding: '96px 24px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-        <div className="orb" style={{ width: 400, height: 400, background: 'var(--accent)', top: -100, left: '50%', transform: 'translateX(-50%)', opacity: 0.08 }} />
-        <h2 className="fade-up" style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(32px,5vw,52px)', fontWeight: 800, color: 'white', letterSpacing: '-0.02em', marginBottom: 16 }}>
-          Ready to stand out?
-        </h2>
-        <p className="fade-up anim-delay-1" style={{ fontSize: 18, color: 'rgba(255,255,255,0.6)', marginBottom: 40, maxWidth: 400, margin: '0 auto 40px' }}>
-          Build your AI portfolio in minutes. Free, no account needed to start.
-        </p>
-        <Link href="/builder" className="btn" style={{ padding: '18px 48px', background: 'var(--accent)', color: 'var(--primary)', fontSize: 17, fontWeight: 800, borderRadius: 14, boxShadow: '0 8px 40px rgba(0,201,167,0.4)', fontFamily: 'var(--font-heading)' }}>
-          Start Building — It&apos;s Free ✨
-        </Link>
+        <motion.div
+          animate={{ scale: [1, 1.1, 1], opacity: [0.08, 0.12, 0.08] }}
+          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+          className="orb"
+          style={{ width: 400, height: 400, background: 'var(--accent)', top: -100, left: '50%', transform: 'translateX(-50%)' }}
+        />
+        <FadeUp>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(32px,5vw,52px)', fontWeight: 800, color: 'white', letterSpacing: '-0.02em', marginBottom: 16 }}>
+            Ready to stand out?
+          </h2>
+          <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.6)', marginBottom: 40, maxWidth: 400, margin: '0 auto 40px' }}>
+            Build your AI portfolio in minutes. Free, no account needed to start.
+          </p>
+          <MagneticBtn
+            href="/builder"
+            className="btn"
+            style={{ padding: '18px 48px', background: 'var(--accent)', color: 'var(--primary)', fontSize: 17, fontWeight: 800, borderRadius: 14, boxShadow: '0 8px 40px rgba(0,201,167,0.4)', fontFamily: 'var(--font-heading)', display: 'inline-block' }}
+          >
+            Start Building — It&apos;s Free ✨
+          </MagneticBtn>
+        </FadeUp>
       </section>
 
       {/* ── FOOTER ── */}
@@ -7837,6 +8244,7 @@ export default function HomePage() {
           <Link href="/history" style={{ fontSize: 12, color: 'var(--text-secondary)', textDecoration: 'none' }}>History</Link>
         </div>
       </footer>
+
     </div>
   );
 }
