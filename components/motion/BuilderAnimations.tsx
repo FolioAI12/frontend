@@ -40,7 +40,7 @@ export function AnimatedStepSidebar({ steps, currentStep, onStepClick }: {
             style={{
               display: 'flex', alignItems: 'center', gap: 10,
               padding: '10px 12px', borderRadius: 10, border: 'none',
-              cursor: 'pointer', background: 'transparent',
+              cursor: 'pointer',
               textAlign: 'left', width: '100%',
               background: active ? 'var(--accent-soft)' : 'transparent',
             }}
