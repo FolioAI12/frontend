@@ -7529,7 +7529,7 @@ const EXAMPLES = [
   },
 ];
 
-function FadeUp({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
+function FadeUp({ children, delay = 0, className = '', style }: { children: React.ReactNode; delay?: number; className?: string; style?: React.CSSProperties }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-60px' });
   return (
@@ -7539,6 +7539,7 @@ function FadeUp({ children, delay = 0, className = '' }: { children: React.React
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.65, delay, ease: [0.16, 1, 0.3, 1] }}
       className={className}
+      style={style}
     >
       {children}
     </motion.div>
